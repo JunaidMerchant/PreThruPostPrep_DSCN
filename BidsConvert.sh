@@ -85,13 +85,13 @@ for s in ${SubID[@]}; do
 		if [ $(find $DcmDir/$s -type d -name *$funcD* | wc -l) -gt 1 ]; then
 			echo "Attention: there is more than one directory for $funcD , please check!"
 			echo "Using the last directory for now..."
-			indir=$(find $DcmDir/$s -type d -name *$funcD* | xargs ls | tail -1)
+			indir=$(ls -d -v $DcmDir/$s/*/*$funcD* | tail -1)
 			echo $indir
 		fi
 		#
 		# Now you can convert that functional, and label it with the appropriate
 		# label in the FuncName list:
-		$Vert -o $outdir/func/ -f sub-${subid}_task-${FuncName[$c]}_bold -b y -ba y -z y $indir
+		$Vert -o $outdir/func/ -f sub-${subid}_task-${FuncName[$c]}_bold -b y -ba y -z y $indir >> log.txt
 		#
 		# End functional loop.
 	done
@@ -112,46 +112,12 @@ for s in ${SubID[@]}; do
 	if [ $(find $DcmDir/$s -type d -name *$StrctDcms* | wc -l) -gt 1 ]; then
 		echo "Attention: there is more than one directory for $StrctDcms , please check!"
 		echo "Using the last directory for now..."
-		indir=$(find $DcmDir/$s -type d -name *$StrctDcms* | xargs ls | tail -1)
+		indir=$(ls -d -v $DcmDir/$s/*/*$StrctDcms* | tail -1)
 	fi
 	#
 	# Convert MPRAGE and label with '_T1w' as per BIDS specification.
-	$Vert -o $outdir/anat/ -f sub-${subid}_T1w -b y -ba y -z y $indir
-	#
-	#
-	#### START WORKING ON FIELD MAPS #############################################
-	# Assign output anat directory, and make dir if there isn't one.
-	if [ ! -d $outdir/fmap ]; then
-		mkdir $outdir/fmap
-	fi
-	#
-	for f in ${FmapDcms[@]}; do
-		# Lower case the AP/PA for labeling the output as per the BIDS specification.
-		Cur=$(echo $f | tr '[:upper:]' '[:lower:]')
-    echo "-- fmap/${Cur}"
-		#
-		# Get input directory by searching the subject dicom folder for fmap.
-		indir=$(find $DcmDir/$s -type d -name *$f*)
-		#
-		# Check to see if there was only one directory. If there are multiple
-		# folders, select the last one and send message.
-		if [ $(find $DcmDir/$s -type d -name *$f* | wc -l) -gt 1 ]; then
-			echo "Attention: there is more than one directory for $f , please check!"
-			echo "Using the last directory for now..."
-			indir=$(find $DcmDir/$s -type d -name *$f* | xargs ls | tail -1)
-		fi
-		#
-		# Convert MPRAGE and label with '_T1w' as per BIDS specification.
-		$Vert -o $outdir/fmap/ -f sub-${subid}_dir-${Cur}_epi -b y -ba y -z y $indir
-		sleep 5
-    #### ADDED IN FROM SHAWN TO INCORPORATE FMAPS #######
-    #### THIS IS HARDCODED AND UGLY! MUST CHANGE ########
-    #### Currently commented, but use with caution #####
-    sed -e '/"InstitutionalDepartmentName": "Department",/a\  "IntendedFor": ["func/sub-'${subid}'_task-jam_run-01_bold.nii.gz", "func/sub-'${subid}'_task-jam_run-02_bold.nii.gz", "func/sub-'${subid}'_task-jam_run-03_bold.nii.gz", "func/sub-'${subid}'_task-jam_run-04_bold.nii.gz", "func/sub-'${subid}'_task-jam_run-05_bold.nii.gz", "func/sub-'${subid}'_task-jam_run-06_bold.nii.gz", "func/sub-'${subid}'_task-tom_run-01_bold.nii.gz", "func/sub-'${subid}'_task-tom_run-02_bold.nii.gz"],' ${outdir}/fmap/sub-${subid}_dir-${Cur}_epi.json > ${outdir}/fmap/sub-${subid}_dir-${Cur}_epi.json.tmp && mv -f ${outdir}/fmap/sub-${subid}_dir-${Cur}_epi.json.tmp ${outdir}/fmap/sub-${subid}_dir-${Cur}_epi.json
-		#
-	done
-	#
-	#
+	$Vert -o $outdir/anat/ -f sub-${subid}_T1w -b y -ba y -z y $indir >> log.txt
+
 	# end subject loop
 done
 
